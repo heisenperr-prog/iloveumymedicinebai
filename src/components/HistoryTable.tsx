@@ -1,0 +1,6 @@
+import type { MedicineHistory } from '../types';
+import { date, time } from '../utils/time';
+import { Badge, Empty } from './ui';
+export function HistoryTable({ history }: { history: MedicineHistory[] }) {
+  return <div className="table-scroll"><table><thead><tr><th>Date / time</th><th>Medicine</th><th>Required</th><th>Opened</th><th>Result</th><th>Acknowledgment</th><th>Remarks</th></tr></thead><tbody>{history.map(h => <tr key={h.id}><td className="nowrap">{date(h.scheduledTime)}<small className="mono">Scheduled {time(h.scheduledTime)}<br />Event {h.actualTime ? time(h.actualTime) : '—'}</small></td><td className="table-primary">{h.medicineName}</td><td>{h.requiredCompartment ? `Compartment ${h.requiredCompartment}` : "Not reported"}</td><td>{h.openedCompartment ? `Compartment ${h.openedCompartment}` : '—'}</td><td><Badge tone={h.result === 'Acknowledged' ? 'green' : h.result === 'Missed' || h.result === 'Wrong compartment' ? 'red' : h.result === 'Pending' ? 'amber' : 'blue'}>{h.result}</Badge></td><td>{h.acknowledged ? 'Confirmed' : 'Not acknowledged'}</td><td className="remarks">{h.remarks}</td></tr>)}</tbody></table>{!history.length && <Empty>No history records match your filters.</Empty>}</div>;
+}

@@ -1,0 +1,14 @@
+import { useState } from 'react';
+import { Bell, Check, TriangleAlert } from 'lucide-react';
+import type { Snapshot } from '../types';
+import { Badge, Empty, Feedback, Panel } from '../components/ui';
+import { date, seconds } from '../utils/time';
+import { useAction } from '../hooks/useAction';
+import { alertService } from '../services/alertService';
+export function Alerts({ snapshot: s }: { snapshot: Snapshot }) {
+  const [filter, setFilter] = useState('active');
+  const [severity, setSeverity] = useState('all');
+  const { busy, feedback, run } = useAction();
+  const alerts = s.alerts.filter(a => (filter === 'all' || (filter === 'reviewed' ? a.acknowledged : !a.acknowledged)) && (severity === 'all' || a.severity === severity));
+  return <><div className="page-heading"><div><div className="breadcrumb">ALERT MANAGEMENT</div><h1>System alerts</h1><p>Review device events and exceptions that need attention.</p></div><Badge tone="amber">{s.alerts.filter(a => !a.acknowledged).length} active alerts</Badge></div><Feedback value={feedback} /><Panel title="Alert feed" action={<Bell size={18} />}><div className="toolbar"><div className="segmented" aria-label="Alert status">{[['active', 'Active'], ['reviewed', 'Acknowledged'], ['all', 'All alerts']].map(([value, label]) => <button key={value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label}</button>)}</div><select aria-label="Filter alert severity" value={severity} onChange={e => setSeverity(e.target.value)}><option value="all">All severities</option><option value="critical">Critical</option><option value="warning">Warning</option><option value="info">Information</option></select></div><div className="alert-feed">{alerts.map(a => <article className={`alert-item severity-${a.severity}`} key={a.id}><div className="alert-icon"><TriangleAlert size={19} /></div><div className="alert-content"><div className="flex items-center gap-2 flex-wrap"><Badge tone={a.severity === 'critical' ? 'red' : a.severity === 'warning' ? 'amber' : 'blue'}>{a.severity.toUpperCase()}</Badge><span className="alert-type">{a.type.replaceAll('-', ' ')}</span><time>{date(a.timestamp)} · {seconds(a.timestamp)}</time></div><p>{a.message}</p></div>{a.acknowledged ? <span className="reviewed"><Check size={14} />Acknowledged</span> : <button className="button" disabled={busy} onClick={() => run(() => alertService.acknowledge(a.id), 'Alert acknowledged. Medicine intake status is unchanged.')}><Check size={14} />Acknowledge</button>}</article>)}{!alerts.length && <Empty><Bell size={26} />No alerts match this filter.<span className="muted text-xs">Use the demo simulator to generate device events.</span></Empty>}</div><div className="table-note">Acknowledging an alert records administrator review. It does not confirm medicine intake or resolve a sensor fault.</div></Panel></>;
+}

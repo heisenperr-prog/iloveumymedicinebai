@@ -1,0 +1,14 @@
+import { Activity, Radio, Volume2 } from 'lucide-react';
+import type { Snapshot } from '../types';
+import { Badge, Feedback, Panel } from '../components/ui';
+import { CompartmentCard } from '../components/CompartmentCard';
+import { DemoControls } from '../components/DemoControls';
+import { EventLog } from '../components/EventLog';
+import { deviceService } from '../services/deviceService';
+import { useAction } from '../hooks/useAction';
+import { gateway } from '../services';
+import { RealDeviceControls } from '../components/RealDeviceControls';
+export function Monitoring({ snapshot: s }: { snapshot: Snapshot }) {
+  const { run, busy, feedback } = useAction();
+  return <><div className="page-heading"><div><div className="breadcrumb">DEVICE TELEMETRY</div><h1>Live monitoring</h1><p>Door, reed switch, servo, and output states from the connected controller.</p></div><Badge tone={s.device.online ? 'green' : 'muted'} dot>{s.device.online ? 'Telemetry active' : 'Last known states'}</Badge></div><div className="monitoring-grid"><Panel title="Compartment feedback" action={<Activity size={18} className="text-green" />}><div className="compartment-grid">{s.compartments.map(c => <CompartmentCard key={c.compartment} compartment={c} schedules={s.schedules} online={s.device.online} />)}</div></Panel><Panel title="Diagnostics"><div className="diagnostics"><div className="diagnostic-row"><Volume2 size={18} /><span>Reminder audio</span><Badge tone={!s.device.online || s.speakerActive === null ? 'muted' : s.speakerActive ? 'amber' : 'green'}>{!s.device.online || s.speakerActive === null ? 'Unknown' : s.speakerActive ? 'Active' : 'Standby'}</Badge></div><p className="muted text-xs">{gateway.mode === 'demo' ? 'Audio and sensor tests are simulated. No sound is sent to a physical speaker.' : 'Device output status is reported by the backend.'}</p>{gateway.mode === 'demo' && s.compartments.map(c => <div className="sensor-tests" key={c.compartment}><h3><Radio size={15} />Compartment {c.compartment}</h3><button className="button" disabled={busy || !s.device.online} onClick={() => run(() => deviceService.simulate({ type: 'reed-fault', compartment: c.compartment }), 'Reed switch simulation updated.')} >{c.reedSwitch === 'fault' ? 'Restore reed switch' : 'Simulate reed fault'}</button><button className="button" disabled={busy || !s.device.online} onClick={() => run(() => deviceService.simulate({ type: 'servo-fault', compartment: c.compartment }), 'Servo simulation updated.')} >{c.servoStatus === 'fault' ? 'Restore servo' : 'Simulate servo fault'}</button></div>)}<Feedback value={feedback} /></div></Panel></div><DemoControls snapshot={s} /><RealDeviceControls snapshot={s} /><Panel title="Device event stream" action={<span className="muted text-xs">Newest first · latest 100 events</span>}><EventLog events={s.events} /></Panel></>;
+}
